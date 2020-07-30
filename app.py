@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from password_strength import PasswordPolicy
 from passlib.hash import pbkdf2_sha256
@@ -36,8 +36,25 @@ class User(db.Model):
         """check that the encrypted password matches the User stored password_hash"""
         return pbkdf2_sha256.verify(password, self.password_hash)
 
-    def check_password(self, password):
+@app.route('/api/users', methods = ['POST'])
+def new_user():
+    def check_password(password):
         """check the password strength"""
         """ With length of at least 8 characters, 1 upper case, 1number, and 1 special character"""
         policy = PasswordPolicy.from_names(length=8,uppercase=1,numbers=1,special=1)
         return len(policy.test(password)) == 0
+
+    username = request.json.get('username')
+    email = request.json.get('email')
+    password = request.json.get('password')
+    if username is None or password is None or email is None:
+        return jsonify(error=404, text="missing parameter"), 404
+    if User.query.filter_by(username = username).first() is not None:
+        return jsonify(error=404, text="user already exist"), 404
+    if check_password(password) == False:
+        return jsonify(error=404, text="Password should be at least 8 characters with 1 Uppercase, 1 number, and and 1 special character"), 404
+    user = User(username = username, email=email)
+    user.set_hash_password(password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({ 'date': user.date_created }), 201
