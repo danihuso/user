@@ -44,12 +44,12 @@ def test_delete_user(client):
     assert len(app.User.query.filter_by(username="peter").filter_by(email="peter@example.org").all()) == 0
 
 def test_POST_user(client):
-    rv = client.post("/api/users", json={"username":"John","email": "John@example.com", "password": "Passw0rd!"})
+    rv = client.post("/api/users", json={"username":"John","email": "john@example.com", "password": "Passw0rd!"})
     json_data = rv.get_json()
     assert "date" in json_data
 
 def test_POST_user_exist(client):
-    rv = client.post("/api/users", json={"username":"John","email": "John@example.com", "password": "Passw0rd!"})
+    rv = client.post("/api/users", json={"username":"John","email": "john@example.com", "password": "Passw0rd!"})
     json_data = rv.get_json()
     assert "user already exist" == json_data["text"]
 
@@ -59,6 +59,11 @@ def test_POST_user_exist(client):
     assert "missing parameter" == json_data["text"]
 
 def test_POST_user_invalid_password(client):
-    rv = client.post("/api/users", json={"username":"Jack","email": "Jack@example.com", "password": "secret"})
+    rv = client.post("/api/users", json={"username":"Jack","email": "jack@example.com", "password": "secret"})
     json_data = rv.get_json()
     assert "Password should be at least 8 characters with 1 Uppercase, 1 number, and and 1 special character" == json_data["text"]
+
+def test_POST_user_invalid_email(client):
+    rv = client.post("/api/users", json={"username":"Jack","email": "Jackexample.com", "password": "Passw0rd!"})
+    json_data = rv.get_json()
+    assert "Please use a valid email" == json_data["text"]

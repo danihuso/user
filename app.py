@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from password_strength import PasswordPolicy
 from passlib.hash import pbkdf2_sha256
+import re
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #Added as suggested by pytest warnings
@@ -38,21 +39,30 @@ class User(db.Model):
 
 @app.route('/api/users', methods = ['POST'])
 def new_user():
+
     def check_password(password):
         """check the password strength"""
-        """ With length of at least 8 characters, 1 upper case, 1number, and 1 special character"""
         policy = PasswordPolicy.from_names(length=8,uppercase=1,numbers=1,special=1)
         return len(policy.test(password)) == 0
+
+    def validate_email(email):
+        """checks if email is a valid string with regular expression"""
+        regex = re.compile(r"^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$")  
+        return bool(regex.match(email))
 
     username = request.json.get('username')
     email = request.json.get('email')
     password = request.json.get('password')
+
     if username is None or password is None or email is None:
         return jsonify(error=404, text="missing parameter"), 404
     if User.query.filter_by(username = username).first() is not None:
         return jsonify(error=404, text="user already exist"), 404
     if check_password(password) == False:
         return jsonify(error=404, text="Password should be at least 8 characters with 1 Uppercase, 1 number, and and 1 special character"), 404
+    if validate_email(email) == False:
+        return jsonify(error=404, text="Please use a valid email"), 404
+
     user = User(username = username, email=email)
     user.set_hash_password(password)
     db.session.add(user)
