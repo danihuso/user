@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from password_strength import PasswordPolicy
 from passlib.hash import pbkdf2_sha256
+import logging
 import jwt
 import re
 
@@ -111,3 +112,9 @@ def delete_user():
     db.session.delete(user)
     db.session.commit()
     return jsonify({ "username":user.username }), 201
+
+
+if __name__ == '__main__':
+
+    logging.basicConfig(stream=sys.stdout,level=logging.WARNING)
+    app.run(host='0.0.0.0', port='8000', debug=False)
