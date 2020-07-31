@@ -9,7 +9,7 @@ import re
 app = Flask(__name__)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False #Added as suggested by pytest warnings
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
-app.config["SECRET_KEY"]="092cfbfe1fb34568b1899802d2af3309"
+app.config["SECRET_KEY"]="092cfbfe1fb34568b1899802d2af3309" #Random generate key
 db = SQLAlchemy(app)
 
 def init_db():
@@ -90,3 +90,24 @@ def get_token():
     token = jwt.encode(token_package, app.config["SECRET_KEY"], algorithm="HS256")
 
     return jsonify({ "token":token.decode("utf-8") }), 201
+
+
+@app.route("/api/users", methods = ["DELETE"])
+def delete_user():
+    token = request.json.get("token")
+    if token is None:
+        return jsonify(error=404, text="missing parameter"), 404
+    try:
+        payload = jwt.decode(token, app.config.get("SECRET_KEY"), algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return jsonify(error=404, text="expired token"), 404
+    except jwt.InvalidTokenError:
+        return jsonify(error=404, text="invalid token"), 404
+    if not("username" in payload) or not("email" in payload):
+        return jsonify(error=404, text="invalid token"), 404
+    user = User.query.filter_by(username=payload["username"]).filter_by(email=payload["email"]).first()
+    if user is None:
+        return jsonify(error=404, text="invalid token"), 404
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({ "username":user.username }), 201
