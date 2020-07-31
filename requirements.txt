@@ -1,0 +1,5 @@
+password_strength
+flask_sqlalchemy 
+flask 
+passlib
+jwt
