@@ -53,7 +53,7 @@ def test_POST_user_exist(client):
     json_data = rv.get_json()
     assert "user already exist" == json_data["text"]
 
-def test_POST_user_exist(client):
+def test_POST_user_missing_parameter(client):
     rv = client.post("/api/users", json={"username":"Jack"})
     json_data = rv.get_json()
     assert "missing parameter" == json_data["text"]
@@ -67,3 +67,23 @@ def test_POST_user_invalid_email(client):
     rv = client.post("/api/users", json={"username":"Jack","email": "Jackexample.com", "password": "Passw0rd!"})
     json_data = rv.get_json()
     assert "Please use a valid email" == json_data["text"]
+
+def test_GET_user_token(client):
+    rv = client.get("/api/users", json={"username":"John", "password": "Passw0rd!"})
+    json_data = rv.get_json()
+    assert "token" in json_data
+
+def test_GET_user_missing_parameter(client):
+    rv = client.get("/api/users", json={"username":"John"})
+    json_data = rv.get_json()
+    assert "missing parameter" == json_data["text"]
+
+def test_GET_user_wrong_user(client):
+    rv = client.get("/api/users", json={"username":"wrongUser", "password": "Passw0rd!"})
+    json_data = rv.get_json()
+    assert "login incorrect" == json_data["text"]
+
+def test_GET_user_wrong_password(client):
+    rv = client.get("/api/users", json={"username":"John", "password": "wrongPassword"})
+    json_data = rv.get_json()
+    assert "login incorrect" == json_data["text"]
