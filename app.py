@@ -40,6 +40,19 @@ class User(db.Model):
         """check that the encrypted password matches the User stored password_hash"""
         return pbkdf2_sha256.verify(password, self.password_hash)
 
+@app.route("/api/userslist", methods = ["GET"])
+def get_users():
+    users = User.query.all()
+    userList=[]
+    for user in users:
+        userDetail={
+            "username":user.username,
+            "email":user.email,
+            "created":user.date_created
+        }
+        userList.append(userDetail)
+    return jsonify(userList), 201
+
 @app.route("/api/users", methods = ["POST"])
 def new_user():
 
