@@ -1,16 +1,24 @@
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from password_strength import PasswordPolicy
 from passlib.hash import pbkdf2_sha256
+from flask_cors import CORS
 import logging
 import jwt
+import sys
 import re
+import random
+import string
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder = 'templates')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False #Added as suggested by pytest warnings
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
 app.config["SECRET_KEY"]="092cfbfe1fb34568b1899802d2af3309" #Random generate key
+
+# enable CORS
+CORS(app, resources={r'/*': {'origins': '*'}})
+
 db = SQLAlchemy(app)
 
 def init_db():
@@ -40,6 +48,12 @@ class User(db.Model):
         """check that the encrypted password matches the User stored password_hash"""
         return pbkdf2_sha256.verify(password, self.password_hash)
 
+@app.route('/', methods = ["GET"])
+def home():
+    #Returns the landing page
+    #return render_template('home.html')
+    return app.send_static_file('index.html')
+
 @app.route("/api/userslist", methods = ["GET"])
 def get_users():
     users = User.query.all()
@@ -52,6 +66,25 @@ def get_users():
         }
         userList.append(userDetail)
     return jsonify(userList), 201
+
+@app.route("/api/randompassword", methods = ["POST"])
+def get_random_password():
+
+    length = request.json.get("length")
+
+    random_source = string.ascii_letters + string.digits + string.punctuation
+    password = random.choice(string.ascii_lowercase)
+    password += random.choice(string.ascii_uppercase)
+    password += random.choice(string.digits)
+    password += random.choice(string.punctuation)
+
+    for i in range(length-4):
+        password += random.choice(random_source)
+
+    password_list = list(password)
+    random.SystemRandom().shuffle(password_list)
+    password = ''.join(password_list)
+    return jsonify({"password":password}), 201
 
 @app.route("/api/users", methods = ["POST"])
 def new_user():

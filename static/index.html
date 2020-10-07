@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+       <title>Application Home Page</title>
+        <script src="https://unpkg.com/vue"></script>
+    </head>
+    <body>
+        <div id="app">
+            <div class="container">
+                    <div class="form-group mx-sm-3 mb-2">
+                    <input type="text" v-model="userInput.username" :data-value="userInput.username" placeholder="username">
+                    <input type="text" v-model="userInput.email" :data-value="userInput.email" placeholder="email">
+                    <button @click="createUser" class="btn btn-primary mb-2">Create User</button>
+                    <label>{{error}}</label>
+                    </div>
+                <table class="table table-dark">
+                    <th>USERNAME</th><th scope="col">EMAIL</th><th scope="col">DATE CREATED</th>
+                    <tr v-for="(user, index) in userList" :key="index"><td>{{user.username}}</td><td>{{user.email}}</td><td>{{user.created}}</td></tr>
+                </table>
+            </div>
+        </div>
+        <script>
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    userList: [],
+                    userInput: {
+                        username:'',
+                        email:'',
+                    },
+                    randomPassword:'',
+                    error:''
+                },
+                //delimiters: ['{{','}}'],
+                methods: {
+
+                    getRandomPasswordV1() {
+                        const requestOptions = {
+                            method: "POST",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Access-Control-Allow-Origin": "http://localhost:5000"
+                                },
+                            body: JSON.stringify({ 
+                                length:8,
+                                upperCase:True,
+                                digits:True,
+                                specialCharacters:True })
+                                };
+                        fetch('http://passwordutility.net:80/api/password/generate', requestOptions)
+                        .then(response => response.json())
+                        .then(json => this.randomPassword = json)
+                    },
+
+                    getRandomPasswordV2() {
+                        const requestOptions = {
+                            method: "POST",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Access-Control-Allow-Origin": "http://localhost:5000"
+                                },
+                            body: JSON.stringify({ 
+                                length:8,
+                                })
+                        };
+                        fetch('http://localhost:5000/api/randompassword', requestOptions)
+                        .then(response => response.json())
+                        .then(json => this.randomPassword = json.password)
+                    },
+
+                    getUserList() {
+                        const requestOptions = {
+                            method: "GET",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Access-Control-Allow-Origin": "http://localhost:5000"
+                                }
+                        };
+                        fetch('http://localhost:5000/api/userslist', requestOptions)
+                        .then(response => response.json())
+                        .then(json => this.userList = json);
+                        
+                    },
+                    createUser() {
+                        this.getRandomPasswordV2();
+                        const requestOptions = {
+                            method: "POST",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Access-Control-Allow-Origin": "http://localhost:5000"
+                                },
+                            body: JSON.stringify({ 
+                                username:this.userInput.username,
+                                email:this.userInput.email,
+                                password:this.randomPassword,
+                                })
+                            };
+                        fetch('http://localhost:5000/api/users', requestOptions)
+                        .then((response) => {
+                            if (response.ok) {
+                                this.getUserList();
+                            } else {
+                                console.log(response);
+                                var json = response.json()
+                                this.error = "failed";//json.text;
+                            }
+                        })
+
+                    }
+                },
+                created() {
+                    this.getUserList(),
+                    this.getRandomPasswordV2()
+                }
+            })
+        </script>
+    </body>
+</html>

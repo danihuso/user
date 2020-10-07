@@ -78,6 +78,7 @@ __Python specific requiremnts:__
 
 + password_strength
 + flask_sqlalchemy 
++ Flask-Cors
 + flask 
 + passlib
 + jwt

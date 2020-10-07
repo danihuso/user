@@ -1,5 +1,6 @@
 password_strength
 flask_sqlalchemy 
+flask-cors
 flask 
 passlib
 jwt
